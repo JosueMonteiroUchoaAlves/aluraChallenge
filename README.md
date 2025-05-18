@@ -1,5 +1,4 @@
-# aluraChallenge
-### README: AI Social Impact Mentor
+# AI Social Impact Mentor
 
 #### Overview
 The **AI Social Impact Mentor** is a Python-based application designed to empower users to address local social issues, such as food insecurity, lack of clean water, or educational disparities. Built with the Textual framework and powered by the Gemini API, this tool guides users in creating actionable plans, connects them with nearby NGOs, and provides motivational feedback to sustain engagement. Inspired by community-driven initiatives like the *Disaster Response Coordinator* and advocacy-focused *AI Community Storyteller*, it tackles Brazil’s social inequalities by fostering grassroots change.
@@ -64,15 +63,15 @@ Sua iniciativa pode alimentar famílias em São Paulo! Cada passo conta.
 #### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/ai-social-impact-mentor.git
-   cd ai-social-impact-mentor
+   git clone https://github.com/JosueMonteiroUchoaAlves/aluraChallenge.git
+   cd aluraChallenge
    ```
 2. Install dependencies:
    ```bash
    pip install textual google-generativeai
    ```
 3. Set up the Gemini API key:
-   - Replace `"AIzaSyANuWDVQs8CHuSfnpOY0mZYYrBrW3bECHQ"` in the code with your own key.
+   - Replace `"YOUR_API_KEY"` in the code with your own key.
 4. Run the app:
    ```bash
    python main.py
@@ -96,7 +95,3 @@ Contributions are welcome! Please open an issue or submit a pull request for bug
 
 #### Acknowledgments
 Inspired by Alura’s 2024 winners, *MedGrandma-AI* and *Disaster Response Coordinator*, for their focus on accessibility and community impact.
-
----
-
-This README provides a clear, engaging overview of the project, aligning with Alura’s expectations for utility, creativity, and effectiveness while showcasing its technical and social value. Share it on Discord and social media to maximize community engagement!
