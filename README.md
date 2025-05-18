@@ -14,6 +14,8 @@ Social challenges, like 33 million Brazilians lacking access to clean water or 6
 4. **Motivational Feedback**: Provides personalized encouragement based on the user’s progress (e.g., "Your efforts can transform lives in Rio!").
 5. **Interactive Interface**: Built with Textual, offering a clean, terminal-based UI with input fields, buttons, and dynamic output.
 
+![image](https://github.com/user-attachments/assets/059a35e2-795b-4abe-bd36-521a12740bb0)
+
 #### Tech Stack
 - **Python**: Core language for logic and API integration.
 - **Textual**: Framework for building an interactive terminal UI.
