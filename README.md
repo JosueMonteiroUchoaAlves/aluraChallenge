@@ -1,4 +1,4 @@
-# AI Social Impact Mentor
+# ConsciencIA - AI Social Impact Mentor
 
 #### Overview
 The **AI Social Impact Mentor** is a Python-based application designed to empower users to address local social issues, such as food insecurity, lack of clean water, or educational disparities. Built with the Textual framework and powered by the Gemini API, this tool guides users in creating actionable plans, connects them with nearby NGOs, and provides motivational feedback to sustain engagement. Inspired by community-driven initiatives like the *Disaster Response Coordinator* and advocacy-focused *AI Community Storyteller*, it tackles Brazil’s social inequalities by fostering grassroots change.
