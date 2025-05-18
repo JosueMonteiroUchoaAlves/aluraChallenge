@@ -5,7 +5,7 @@ import google.generativeai as genai
 import asyncio
 
 # Configurar API do Gemini (substitua pela sua chave)
-genai.configure(api_key="AIzaSyANuWDVQs8CHuSfnpOY0mZYYrBrW3bECHQ")
+genai.configure(api_key="YOUR_API_KEY")
 
 NGO_DATA = {
     "São Paulo": [
