@@ -7,7 +7,7 @@ import os
 
 # Criar o cliente Gemini (usará a variável de ambiente GOOGLE_API_KEY automaticamente)
 try:
-    client = genai.Client(api_key='AIzaSyBA-onQsoRPtt4DXR-r6mmmoy5ZhKy3d_o')
+    client = genai.Client(api_key='GOOGLE_API_KEY')
 except Exception as e:
     print(f"ERRO ao inicializar o cliente Google AI: {e}")
     print("Verifique sua GOOGLE_API_KEY e sua conexão de internet.")
