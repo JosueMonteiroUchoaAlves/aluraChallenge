@@ -1,11 +1,7 @@
-/* styles.css */
-
 Input {
     margin: 0 1;
-    /* CORREÇÃO: Usar border: round <cor>; em vez de border-radius */
     border: round $primary;
     width: 70%;
-    /* Adicionado padding para visualizar melhor o fundo arredondado */
     padding: 0 1;
 }
 
@@ -15,34 +11,45 @@ Input {
 
 Button {
     margin: 0 1;
-    /* CORREÇÃO: Usar border: round <cor>; em vez de border-radius */
     border: round $primary;
     width: 25%;
-    /* Adicionado padding para visualizar melhor o fundo arredondado */
     padding: 0 2;
 }
 
-Horizontal {
+Horizontal#input_row {
     margin: 1 1;
-    /* CORREÇÃO: Usar align: center middle; em container */
     align: center middle;
 }
 
-Static#status {
+Vertical#loading_area {
     margin: 1 2;
     padding: 0 1;
-    width: auto; /* ou auto */
+    align: center middle;  /* Center child widgets (status and spinner) */
+    width: 100%;  /* Full width for proper centering */
+    height: 10;  /* Fixed height to ensure visibility of larger widgets */
 }
 
-Static#output {
-    margin: 2 2;
+Static#status {
+    width: 20;  /* Wider to make text area larger */
+    height: 3;  /* Taller to emphasize text */
+    text-style: bold;  /* Emphasize text for prominence */
+    content-align: center middle;  /* Center text within widget */
+    padding: 0 1;  /* Small padding for spacing */
+}
+
+LoadingIndicator#loading_spinner {
+    width: 10;  /* Larger spinner (10 character units) */
+    height: 5;  /* Larger spinner (5 line units) */
+    content-align: center middle;  /* Center spinner within widget */
+    padding: 0 1;  /* Small padding for spacing */
+}
+
+Markdown#output {
+    margin: 1 2;
     padding: 1 2;
-    height: 1fr;
+    height: 3fr;
     width: 100%;
     overflow: auto;
     background: $panel;
-    /* CORREÇÃO: Usar um tipo de borda válido como solid ou round */
-    /* Originalmente era solid, o traceback mostrava 'subtle' dando erro */
-    border: solid $primary; /* Use solid para borda reta ou mude para round se quiser arredondar o output também */
-    min-height: 1;
-  }
+    border: solid $primary;
+}
