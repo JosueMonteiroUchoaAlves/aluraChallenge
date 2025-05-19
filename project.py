@@ -1,5 +1,5 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Static, Input, Button, LoadingIndicator
+from textual.widgets import Header, Footer, Static, Input, Button, LoadingIndicator, Markdown
 from textual.containers import Container, Vertical, Horizontal
 from google import genai
 import asyncio
@@ -7,7 +7,7 @@ import os
 
 # Criar o cliente Gemini (usará a variável de ambiente GOOGLE_API_KEY automaticamente)
 try:
-    client = genai.Client(api_key='GOOGLE_API_KEY')
+    client = genai.Client(api_key='AIzaSyBA-onQsoRPtt4DXR-r6mmmoy5ZhKy3d_o')
 except Exception as e:
     print(f"ERRO ao inicializar o cliente Google AI: {e}")
     print("Verifique sua GOOGLE_API_KEY e sua conexão de internet.")
@@ -175,21 +175,16 @@ class MentorApp(App):
         yield Header()
         with Container(): # Container principal
             with Vertical(): # Container Vertical para empilhar a linha Input/Button e os Statics
-                # Novo container Horizontal para Input e Button lado a lado
-                # Damos um ID 'input_row' para estilizar no CSS
                 with Horizontal(id="input_row"):
                     yield Input(placeholder="Ex.: Problema: fome, Orçamento: R$100, Tempo: 10h, Local: São Paulo, Progresso: inicial", id="dados_projeto")
                     yield Button("Gerar Plano", id="gerar")
-                # --- NOVA ÁREA PARA LOADING E STATUS ---
-                # Este container Vertical (#loading_area) vai englobar o status e o indicador
-                # Ele será mostrado durante o loading e escondido quando o output estiver visível.
                 with Vertical(id="loading_area", classes="-hidden"): # <-- ADICIONADO: Container para loading, invisível por padrão
                      # O widget de status (#status) agora fica DENTRO desta área de loading
                      yield Static("Carregando...", id="status") # <-- MOVIDO: Static#status para dentro de #loading_area
                      yield LoadingIndicator(id="loading_spinner") # <-- ADICIONADO: LoadingIndicator com um ID
 
                 # A área de output principal (será escondida durante loading)
-                yield Static("", id="output") # <-- Static#output agora vem DEPOIS da área de loading
+                yield Markdown("", id="output") # <-- Static#output agora vem DEPOIS da área de loading
 
         yield Footer()
 
@@ -199,7 +194,7 @@ class MentorApp(App):
             gerar_button = self.query_one("#gerar", Button)
             # Obtenha referências para o status (agora dentro da área de loading), output, e a área de loading
             status_widget = self.query_one("#status", Static)
-            output_widget = self.query_one("#output", Static)
+            output_widget = self.query_one("#output", Markdown)
             loading_area = self.query_one("#loading_area", Vertical) # <-- ADICIONADO
 
             gerar_button.disabled = True # Desabilita o botão
@@ -216,14 +211,12 @@ class MentorApp(App):
 
     async def gerar_resposta(self, gerar_button: Button):
         text = self.query_one("#dados_projeto", Input).value
-         # Obtenha referências aos widgets (é seguro fazer isso dentro da tarefa)
         status_widget = self.query_one("#status", Static) # <-- Referência ao status (dentro de #loading_area)
-        output_widget = self.query_one("#output", Static)
+        output_widget = self.query_one("#output", Markdown)
         loading_area = self.query_one("#loading_area", Vertical) # <-- ADICIONADO: Referência à área de loading
 
         try:
-            # --- (Seu código existente para chamar as funções da API) ---
-            # Progresso: Estruturar plano
+
             status_widget.update("Gerando plano")
             plano = await estruturar_plano(text) # Confirme se client/model_name são globais ou passados
             await asyncio.sleep(0.1)
@@ -271,8 +264,6 @@ class MentorApp(App):
             traceback.print_exc()
 
         finally:
-            # Este bloco SEMPRE roda no final, após try ou except
-            # --- Lógica para esconder área de loading e mostrar output ---
             loading_area.add_class("-hidden") # <-- ADICIONADO: Esconde a área de loading
             output_widget.remove_class("-hidden") # <-- ADICIONADO: Mostra o output principal
 
