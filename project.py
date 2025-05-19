@@ -1,11 +1,24 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Static, Input, Button
-from textual.containers import Container, Vertical
-import google.generativeai as genai
+from textual.widgets import Header, Footer, Static, Input, Button, LoadingIndicator
+from textual.containers import Container, Vertical, Horizontal
+from google import genai
 import asyncio
 
-# Configurar API do Gemini (substitua pela sua chave)
-genai.configure(api_key="YOUR_API_KEY")
+# Validar se a chave foi definida
+if not os.getenv('GOOGLE_API_KEY'):
+    print("ERRO: A variável de ambiente GOOGLE_API_KEY não está definida.")
+    print("Por favor, defina a variável antes de executar o script.")
+    exit() # Sai do programa se a chave não estiver definida
+
+# Criar o cliente Gemini (usará a variável de ambiente GOOGLE_API_KEY automaticamente)
+try:
+    client = genai.Client(api_key="YOUR API KEY")
+except Exception as e:
+    print(f"ERRO ao inicializar o cliente Google AI: {e}")
+    print("Verifique sua GOOGLE_API_KEY e sua conexão de internet.")
+    exit()
+
+model_name = "gemini-2.5-flash-preview-04-17"
 
 NGO_DATA = {
     "São Paulo": [
@@ -17,119 +30,258 @@ NGO_DATA = {
         {"nome": "EducaRio", "distancia": "6km", "contato": "contato@educario.org", "missao": "Acesso à educação"}
     ]
 }
+   
+# Função fazer_pergunta modificada para usar o cliente e o nome do modelo
+# Adicione no início do arquivo se ainda não tiver:
+import traceback # Para imprimir o traceback completo em caso de erro
 
-def gerar_modelo():
-    return genai.GenerativeModel("gemini-2.5-flash-preview-04-17")
+# ... (restante do seu código) ...
 
-def prompt_model(model, prompt):
-    return model.generate_content(prompt).text
+# Função fazer_pergunta modificada para usar o cliente e o nome do modelo
+async def fazer_pergunta(prompt):
+    """Faz uma chamada assíncrona à API do Gemini usando o cliente."""
+    print(f"Chamando API com prompt (primeiras 500 chars): {prompt[:500]}...") # Depuração: Mostra o prompt
+    try:
+        # Usando o método generate_content através do cliente
+        response = await asyncio.wait_for(
+            asyncio.to_thread(
+                client.models.generate_content,
+                model=model_name, # Passa o nome do modelo aqui
+                contents=prompt,
+                # Opcional: Configurar para garantir saída markdown - descomente se precisar
+                # generation_config={"response_mime_type": "text/markdown"}
+            ),
+            timeout=20.0 # Grande o timeout, pois as chamadas podem demorar um pouco
+        )
 
-def estruturar_plano(p, o, t, l):
+        # Depuração: Mostra o objeto de resposta completo se não tiver texto ou for vazio
+        if not hasattr(response, 'text') or not response.text:
+             print(f"Aviso: Resposta da API sem texto válido ou vazia.")
+             print(f"Objeto de resposta completo: {response}") # <-- IMPRIME O OBJETO COMPLETO AQUI
+             return "**Erro:** Resposta da API sem texto válido ou vazia."
+
+        # Depuração: Mostra o texto da resposta (primeiras 500 chars) se for bem-sucedida
+        print(f"API retornou texto (primeiras 500 chars): {response.text[:500]}...")
+        return response.text # Retorna o texto se tudo ok
+
+    except asyncio.TimeoutError:
+        print("Erro: Tempo limite excedido na chamada da API.") # Depuração: Confirma timeout
+        return "**Erro:** Tempo limite da chamada à API excedido."
+    except Exception as e:
+        print(f"Erro na chamada da API: {e}") # Depuração: Imprime o erro capturado
+        traceback.print_exc() # Depuração: Imprime o traceback completo do erro
+        # Possível causa do problema: str(e) contém "{'@type':".
+        # Para evitar isso, podemos retornar apenas uma mensagem genérica ou inspecionar 'e'
+        # Mas por enquanto, vamos ver o que 'e' imprime acima.
+        return f"**Erro na API:** {str(e)}"
+   
+async def estruturar_plano(texto):
     prompt = f"""
-    Você é um Mentor de Impacto Social por IA. Restruture as entradas do usuário em um resumo de plano claro e conciso em markdown.
+    Você é um Mentor de Impacto Social por IA. Restruture as entradas do usuário em um resumo de plano claro e conciso em markdown. Seja breve!
     **Entrada:**
-    - Problema: {p}
-    - Orçamento: {o}
-    - Tempo: {t}
-    - Local: {l}
+    Deve conter:
+    - Problema
+    - Orçamento
+    - Tempo
+    - Local
+    Texto:
+    ---------
+    {texto}
+    ---------
+    
+    **Saída:** Um plano estruturado em até 100 palavras. Se faltar informação, retorne:
+    ---------
+    ! Faltam informações: [liste o que falta]
+    ---------
     """
     try:
-        return prompt_model(gerar_modelo(), prompt)
+        return await fazer_pergunta(prompt)
     except Exception as e:
-        return f"### Resumo do Plano\nErro: {str(e)}"
+        return f"### Resumo do Plano\n**Erro:** {str(e)}"
 
-def dividir_tarefas(p, o, t, l):
+async def dividir_tarefas(texto):
     prompt = f"""
-    Divida o plano em 4–6 passos acionáveis. Markdown em português.
-    - Problema: {p}
-    - Orçamento: {o}
-    - Tempo: {t}
-    - Local: {l}
+    Divida o plano em 4–6 passos acionáveis em markdown. Seja breve!
+    **Entrada:**
+    Deve conter:
+    - Problema
+    - Orçamento
+    - Tempo
+    - Local
+    Texto:
+    ---------
+    {texto}
+    ---------
+    
+    **Saída:** Lista de passos em até 100 palavras.
     """
     try:
-        return prompt_model(gerar_modelo(), prompt)
+        return await fazer_pergunta(prompt)
     except Exception as e:
-        return f"### Plano de Ação\nErro: {str(e)}"
+        return f"### Plano de Ação\n**Erro:** {str(e)}"
 
-def estimar_custos(p, o):
+async def estimar_custos(texto):
     prompt = f"""
-    Estime custos para o problema '{p}' com orçamento de R${o}. Liste itens com preços. Saída em markdown.
+    Estime custos para o problema com base no orçamento, em markdown. Seja breve!
+    Texto:
+    ---------
+    {texto}
+    ---------
+    
+    **Saída:** Lista de itens com preços em até 80 palavras.
     """
     try:
-        return prompt_model(gerar_modelo(), prompt)
+        return await fazer_pergunta(prompt)
     except Exception as e:
-        return f"### Estimativa de Custos\nErro: {str(e)}"
+        return f"### Estimativa de Custos\n**Erro:** {str(e)}"
 
-def buscar_ongs(p, l):
+async def buscar_ongs(texto):
     prompt = f"""
-    Sugira 2 ONGs em {l} para o problema '{p}', com nome, distância, contato e missão. Saída em markdown.
+    Sugira 2 ONGs no local para o problema, em markdown. Seja breve!
+    Texto:
+    ---------
+    {texto}
+    ---------
+    
+    **Saída:** Nome, distância, contato e missão de cada ONG, em até 60 palavras.
     """
     try:
-        return prompt_model(gerar_modelo(), prompt)
+        return await fazer_pergunta(prompt)
     except Exception:
-        fallback = NGO_DATA.get(l, [
+        fallback = [
             {"nome": "ONG Genérica 1", "distancia": "Desconhecida", "contato": "contato@ong1.org", "missao": "Apoio geral"},
             {"nome": "ONG Genérica 2", "distancia": "Desconhecida", "contato": "contato@ong2.org", "missao": "Apoio geral"}
-        ])
+        ]
         return "\n".join([
             "### ONGs Sugeridas",
             *[f"- **{ong['nome']}**: {ong['distancia']}, contato: {ong['contato']}, missão: {ong['missao']}" for ong in fallback]
         ])
 
-def gerar_motivacao(p, l, progresso):
-    motivacoes = {
-        "inicial": "Incentive o usuário a começar sua jornada com confiança.",
-        "em andamento": "Celebre o progresso e sugira próximos passos.",
-        "travado": "Empatize com a frustração e ofereça ajuda." 
-    }
+async def gerar_motivacao(texto):
     prompt = f"""
-    Gere uma mensagem motivacional sobre {p} em {l}. Progresso: {motivacoes.get(progresso, 'Incentive de forma geral')}. Markdown.
+    Gere uma mensagem motivacional breve sobre o problema no local, em markdown. Máximo 50 palavras.
+    Texto:
+    ---------
+    {texto}
+    ---------
     """
     try:
-        return prompt_model(gerar_modelo(), prompt)
+        return await fazer_pergunta(prompt)
+    except asyncio.TimeoutError:
+        return "**Erro:** Tempo limite excedido"
     except Exception as e:
         return f"### Mensagem Motivacional\nErro: {str(e)}"
 
 class MentorApp(App):
-    CSS_PATH = None
+    CSS_PATH = "styles.css"
+
 
     def compose(self) -> ComposeResult:
         yield Header()
-        with Container():
-            with Vertical():
-                yield Input(placeholder="Problema social", id="problema")
-                yield Input(placeholder="Orçamento (R$)", id="orcamento")
-                yield Input(placeholder="Tempo disponível (h)", id="tempo")
-                yield Input(placeholder="Local", id="local")
-                yield Input(placeholder="Progresso (inicial/em andamento/travado)", id="progresso")
-                yield Button("Gerar Plano", id="gerar")
-                yield Static("", id="output")
+        with Container(): # Container principal
+            with Vertical(): # Container Vertical para empilhar a linha Input/Button e os Statics
+                # Novo container Horizontal para Input e Button lado a lado
+                # Damos um ID 'input_row' para estilizar no CSS
+                with Horizontal(id="input_row"):
+                    yield Input(placeholder="Ex.: Problema: fome, Orçamento: R$100, Tempo: 10h, Local: São Paulo, Progresso: inicial", id="dados_projeto")
+                    yield Button("Gerar Plano", id="gerar")
+                # --- NOVA ÁREA PARA LOADING E STATUS ---
+                # Este container Vertical (#loading_area) vai englobar o status e o indicador
+                # Ele será mostrado durante o loading e escondido quando o output estiver visível.
+                with Vertical(id="loading_area", classes="-hidden"): # <-- ADICIONADO: Container para loading, invisível por padrão
+                     # O widget de status (#status) agora fica DENTRO desta área de loading
+                     yield Static("Carregando...", id="status") # <-- MOVIDO: Static#status para dentro de #loading_area
+                     yield LoadingIndicator(id="loading_spinner") # <-- ADICIONADO: LoadingIndicator com um ID
+
+                # A área de output principal (será escondida durante loading)
+                yield Static("", id="output") # <-- Static#output agora vem DEPOIS da área de loading
+
         yield Footer()
+
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "gerar":
-            asyncio.create_task(self.gerar_resposta())
+            gerar_button = self.query_one("#gerar", Button)
+            # Obtenha referências para o status (agora dentro da área de loading), output, e a área de loading
+            status_widget = self.query_one("#status", Static)
+            output_widget = self.query_one("#output", Static)
+            loading_area = self.query_one("#loading_area", Vertical) # <-- ADICIONADO
 
-    async def gerar_resposta(self):
-        p = self.query_one("#problema", Input).value
-        o = self.query_one("#orcamento", Input).value
-        t = self.query_one("#tempo", Input).value
-        l = self.query_one("#local", Input).value
-        progresso = self.query_one("#progresso", Input).value or "inicial"
+            gerar_button.disabled = True # Desabilita o botão
 
-        if not all([p, o, t, l]):
-            self.query_one("#output", Static).update("[b]Erro:[/b] Todos os campos são obrigatórios.")
-            return
+            # --- Lógica para esconder output e mostrar área de loading ---
+            output_widget.add_class("-hidden") # <-- ADICIONADO: Esconde o output
+            loading_area.remove_class("-hidden") # <-- ADICIONADO: Mostra a área de loading
 
-        output = "\n\n".join([
-            estruturar_plano(p, o, t, l),
-            dividir_tarefas(p, o, t, l),
-            estimar_custos(p, o),
-            buscar_ongs(p, l),
-            gerar_motivacao(p, l, progresso)
-        ])
+            status_widget.update("Iniciando...") # Atualiza o status (agora visível na área de loading)
+            output_widget.update("") # Limpa o output antigo
 
-        self.query_one("#output", Static).update(output)
+            # Cria a tarefa assíncrona, passando o botão
+            asyncio.create_task(self.gerar_resposta(gerar_button))
 
+    async def gerar_resposta(self, gerar_button: Button):
+        text = self.query_one("#dados_projeto", Input).value
+         # Obtenha referências aos widgets (é seguro fazer isso dentro da tarefa)
+        status_widget = self.query_one("#status", Static) # <-- Referência ao status (dentro de #loading_area)
+        output_widget = self.query_one("#output", Static)
+        loading_area = self.query_one("#loading_area", Vertical) # <-- ADICIONADO: Referência à área de loading
+
+        try:
+            # --- (Seu código existente para chamar as funções da API) ---
+            # Progresso: Estruturar plano
+            status_widget.update("Gerando plano")
+            plano = await estruturar_plano(text) # Confirme se client/model_name são globais ou passados
+            await asyncio.sleep(0.1)
+
+            # Progresso: Dividir tarefas
+            status_widget.update("Dividindo tarefas")
+            tarefas = await dividir_tarefas(plano) # Confirme se client/model_name são globais ou passados
+            await asyncio.sleep(0.1)
+
+            # Progresso: Estimar custos
+            status_widget.update("Gerando orçamento")
+            custos = await estimar_custos(plano) # Confirme se client/model_name são globais ou passados
+            await asyncio.sleep(0.1)
+
+            # Progresso: Buscar ONGs
+            status_widget.update("Buscando ONGs")
+            ongs = await buscar_ongs(text) # Confirme se client/model_name são globais ou passados
+            await asyncio.sleep(0.1)
+
+            # Progresso: Gerar motivação
+            status_widget.update("Criando mensagem motivacional")
+            motivacao = await gerar_motivacao(text) # Confirme se client/model_name são globais ou passados
+            status_widget.update("Pronto para exibir") # Status atualizado antes de juntar
+            await asyncio.sleep(0.1) # Pequeno delay antes de juntar/exibir
+
+            # Finalizado
+            output = "\n\n".join([plano, tarefas, custos, ongs, motivacao])
+            status_widget.update("Juntando resultados")
+
+            # --- Bloco TRY/EXCEPT existente para isolar erro de exibição ---
+            try:
+                 output_widget.update(output)
+                 status_widget.update("Concluído!")
+            except Exception as e:
+                 status_widget.update("Erro ao exibir!")
+                 print(f"ERRO ao atualizar o widget de saída: {e}")
+                 traceback.print_exc()
+                 output_widget.update(f"Ocorreu um erro interno ao exibir o resultado:\n{e}\nVerifique a saída do terminal para detalhes.")
+
+        except Exception as e:
+            # Este bloco captura erros que acontecem DURANTE as chamadas da API
+            status_widget.update("Erro Crítico!")
+            output_widget.update(f"Ocorreu um erro crítico durante a geração: {e}\nVerifique o terminal para detalhes.")
+            print(f"Erro Crítico na geração: {e}")
+            traceback.print_exc()
+
+        finally:
+            # Este bloco SEMPRE roda no final, após try ou except
+            # --- Lógica para esconder área de loading e mostrar output ---
+            loading_area.add_class("-hidden") # <-- ADICIONADO: Esconde a área de loading
+            output_widget.remove_class("-hidden") # <-- ADICIONADO: Mostra o output principal
+
+            gerar_button.disabled = False # Reativa o botão
+            status_widget.update("Pronto??") # Opcional: Reseta o texto de status no Static#status
 if __name__ == "__main__":
     MentorApp().run()
