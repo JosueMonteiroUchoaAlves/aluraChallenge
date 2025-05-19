@@ -5,16 +5,6 @@ from google import genai
 import asyncio
 import os
 
-# Configurar API do Gemini (substitua pela sua chave)
-
-"""os.environ['GOOGLE_API_KEY'] = "GOOGLE_API_KEY"
-
-# Validar se a chave foi definida
-if not os.getenv('GOOGLE_API_KEY'):
-    print("ERRO: A variável de ambiente GOOGLE_API_KEY não está definida.")
-    print("Por favor, defina a variável antes de executar o script.")
-    exit() # Sai do programa se a chave não estiver definida"""
-
 # Criar o cliente Gemini (usará a variável de ambiente GOOGLE_API_KEY automaticamente)
 try:
     client = genai.Client(api_key='GOOGLE_API_KEY')
