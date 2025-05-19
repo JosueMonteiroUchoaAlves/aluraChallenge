@@ -43,10 +43,9 @@ async def fazer_pergunta(prompt):
                 client.models.generate_content,
                 model=model_name, # Passa o nome do modelo aqui
                 contents=prompt,
-                # Opcional: Configurar para garantir saída markdown - descomente se precisar
-                # generation_config={"response_mime_type": "text/markdown"}
+                config={"tools": [{"google_search": {}}]}
             ),
-            timeout=20.0 # Grande o timeout, pois as chamadas podem demorar um pouco
+            timeout=30.0 # Grande o timeout, pois as chamadas podem demorar um pouco
         )
 
         # Depuração: Mostra o objeto de resposta completo se não tiver texto ou for vazio
@@ -72,9 +71,8 @@ async def fazer_pergunta(prompt):
    
 async def estruturar_plano(texto):
     prompt = f"""
-    Você é um Mentor de Impacto Social por IA. Restruture as entradas do usuário em um resumo de plano claro e conciso em markdown. Seja breve!
+    Você é um Mentor de Impacto Social por IA. Crie um plano detalhado em markdown para resolver o problema, com seções: Objetivos, Estratégias, Cronograma e Recursos Necessários. Use a internet para buscar dados relevantes. Se faltar informação, sugira valores razoáveis.
     **Entrada:**
-    Deve conter:
     - Problema
     - Orçamento
     - Tempo
@@ -84,9 +82,10 @@ async def estruturar_plano(texto):
     {texto}
     ---------
     
-    **Saída:** Um plano estruturado em até 100 palavras. Se faltar informação, retorne:
+    **Saída:** Plano detalhado em até 300 palavras.
+    Se faltar informação, retorne:
     ---------
-    ! Faltam informações: [liste o que falta]
+    Faltam informações: [liste o que falta]
     ---------
     """
     try:
@@ -96,9 +95,8 @@ async def estruturar_plano(texto):
 
 async def dividir_tarefas(texto):
     prompt = f"""
-    Divida o plano em 4–6 passos acionáveis em markdown. Seja breve!
+    Divida o plano em 6–8 passos acionáveis e detalhados em markdown, incluindo subtarefas se necessário. Use a internet para sugerir recursos ou ferramentas.
     **Entrada:**
-    Deve conter:
     - Problema
     - Orçamento
     - Tempo
@@ -108,7 +106,7 @@ async def dividir_tarefas(texto):
     {texto}
     ---------
     
-    **Saída:** Lista de passos em até 100 palavras.
+    **Saída:** Lista de passos em até 200 palavras.
     """
     try:
         return await fazer_pergunta(prompt)
@@ -117,13 +115,13 @@ async def dividir_tarefas(texto):
 
 async def estimar_custos(texto):
     prompt = f"""
-    Estime custos para o problema com base no orçamento, em markdown. Seja breve!
+    Estime custos detalhados para o problema em markdown, usando a internet para buscar preços reais de sites brasileiros (ex.: Mercado Livre, Magazine Luiza). Inclua uma tabela comparativa de itens e prepare um carrinho de compras com total em reais (BRL).
     Texto:
     ---------
     {texto}
     ---------
     
-    **Saída:** Lista de itens com preços em até 80 palavras.
+    **Saída:** Tabela e carrinho em até 150 palavras.
     """
     try:
         return await fazer_pergunta(prompt)
@@ -132,13 +130,13 @@ async def estimar_custos(texto):
 
 async def buscar_ongs(texto):
     prompt = f"""
-    Sugira 2 ONGs no local para o problema, em markdown. Seja breve!
+    Sugira 2 ONGs no local para o problema em markdown, incluindo links para seus sites. Use a internet para complementar os dados se necessário.
     Texto:
     ---------
     {texto}
     ---------
     
-    **Saída:** Nome, distância, contato e missão de cada ONG, em até 60 palavras.
+    **Saída:** Detalhes das ONGs em até 80 palavras.
     """
     try:
         return await fazer_pergunta(prompt)
