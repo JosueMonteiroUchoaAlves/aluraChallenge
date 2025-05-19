@@ -85,13 +85,8 @@ This project aligns with the mission to address *problemas sociais* by empowerin
 - Add multilingual support for broader accessibility.
 - Incorporate a progress tracker to log user actions and milestones.
 
-#### Demo
-- **Screenshots**: See the Textual UI in action with sample inputs and outputs (to be added).
-- **Video Demo**: A walkthrough of creating a plan for addressing food insecurity (planned).
-- **Colab Notebook**: Prototype available for testing the Gemini API integration (optional).
-
 #### Contributing
-Contributions are welcome! Please open an issue or submit a pull request for bug fixes, new features, or improvements.
+Contributions are welcome! After May 19, please open an issue or submit a pull request for bug fixes, new features, or improvements.
 
 #### Acknowledgments
 Inspired by Alura’s 2024 winners, *MedGrandma-AI* and *Disaster Response Coordinator*, for their focus on accessibility and community impact.
